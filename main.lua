@@ -36,8 +36,6 @@ local platforms = display.newGroup();
 local lastPattern = 1;
 local lastPlatformY = 0;
 
-local environment_offset = 0;
-
 physics.addBody(player, "dynamic", {bounce = 0.0, friction = 0.8, density=2.0});
 player.isFixedRotation = true;
 physics.addBody(wallLeft, "static", {bounce = 0.0, friction = 0.5});
@@ -90,17 +88,18 @@ local function initPlatforms()
 end
 
 local function handlePlatform()
-    lastPlatformY = platforms[platforms.numChildren].y;
-    for i= 1, platforms.numChildren do
+    local addPlatform = false;
+
+    for i = platforms.numChildren, 1, -1 do
         if platforms[i].y >= MAX_HEIGHT_PLATFORM then
-            platforms.remove(platforms[i]);
-            i=i-1;
+            platforms[i]:removeSelf();
+            addPlatform = true;
         end
     end
 
-    if environment_offset >= MIN_VISIBLE_OFFSET then
-        environment_offset = 0;
-
+    if addPlatform then
+        lastPlatformY = platforms[1].y;
+        addPlatform = false;
         local newPattern = math.random(6);
         if newPattern == lastPattern then
             if newPattern == 6 then
@@ -168,7 +167,6 @@ local function inputHandler(event)
         for i=1,platforms.numChildren do
             transition.moveTo(platforms[i], {y=platforms[i].y + JUMP_HEIGHT, transition=easing.inOutSine, time=800});
         end
-        environment_offset = environment_offset + JUMP_HEIGHT;
     end
 end
 
@@ -187,6 +185,11 @@ local function reset(event)
     player.x = CENTER_X;
     player.y = CENTER_Y;
     player:setLinearVelocity(0,0);
+    for i=platforms.numChildren, 1, -1 do
+        platforms[i]:removeSelf();
+    end
+    platforms = display.newGroup();
+    initPlatforms();
 end
 
 local function localCollision(self, event)
